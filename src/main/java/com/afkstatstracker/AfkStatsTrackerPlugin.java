@@ -1,7 +1,6 @@
 package com.afkstatstracker;
 
 import com.google.gson.Gson;
-import com.google.inject.Provides;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -29,8 +28,6 @@ public class AfkStatsTrackerPlugin extends Plugin
 	@Inject
 	private Client client;
 
-	@Inject
-	private AfkStatsTrackerConfig config;
 
 	@Inject
 	private ClientToolbar clientToolbar;
@@ -203,9 +200,4 @@ public class AfkStatsTrackerPlugin extends Plugin
 		return mouseListener.getClickCounter().size();
 	}
 
-	@Provides
-	AfkStatsTrackerConfig provideConfig(ConfigManager configManager)
-	{
-		return configManager.getConfig(AfkStatsTrackerConfig.class);
-	}
 }
