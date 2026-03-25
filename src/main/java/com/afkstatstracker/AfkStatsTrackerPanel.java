@@ -6,6 +6,8 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyAdapter;
@@ -221,6 +223,47 @@ public class AfkStatsTrackerPanel extends PluginPanel
 			session.getClickCount()));
 		statsLabel.setForeground(Color.GRAY);
 
+		// Copy icon
+		JLabel copyIcon = new JLabel("\uD83D\uDCCB");
+		copyIcon.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		copyIcon.setToolTipText("Copy session stats");
+		copyIcon.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				long durationMs = session.getEndTime() - session.getStartTime();
+				long totalSeconds = durationMs / 1000;
+				long hours = totalSeconds / 3600;
+				long minutes = (totalSeconds % 3600) / 60;
+				long seconds = totalSeconds % 60;
+
+				String lengthStr;
+				if (hours > 0)
+				{
+					lengthStr = String.format("%dh %dm %ds", hours, minutes, seconds);
+				}
+				else if (minutes > 0)
+				{
+					lengthStr = String.format("%dm %ds", minutes, seconds);
+				}
+				else
+				{
+					lengthStr = String.format("%ds", seconds);
+				}
+
+				String text = String.format(
+					"Session: %s\nLength: %s\nConsistency: %d\nAvg Interval: %.0fms\nClicks: %d",
+					session.getName(), lengthStr,
+					session.getConsistencyScore(),
+					session.getAvgInterval(),
+					session.getClickCount());
+
+				Toolkit.getDefaultToolkit().getSystemClipboard()
+					.setContents(new StringSelection(text), null);
+			}
+		});
+
 		// Delete icon
 		JLabel deleteIcon = new JLabel("\uD83D\uDDD1");
 		deleteIcon.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -235,12 +278,19 @@ public class AfkStatsTrackerPanel extends PluginPanel
 			}
 		});
 
+		// Icons panel
+		JPanel iconsPanel = new JPanel();
+		iconsPanel.setLayout(new BoxLayout(iconsPanel, BoxLayout.X_AXIS));
+		iconsPanel.add(copyIcon);
+		iconsPanel.add(Box.createRigidArea(new Dimension(5, 0)));
+		iconsPanel.add(deleteIcon);
+
 		JPanel textPanel = new JPanel(new GridLayout(2, 1));
 		textPanel.add(nameLabel);
 		textPanel.add(statsLabel);
 
 		row.add(textPanel, BorderLayout.CENTER);
-		row.add(deleteIcon, BorderLayout.EAST);
+		row.add(iconsPanel, BorderLayout.EAST);
 
 		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
 		return row;
