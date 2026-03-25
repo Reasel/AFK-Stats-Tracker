@@ -5,7 +5,10 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridLayout;
+import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.FocusAdapter;
@@ -224,24 +227,9 @@ public class AfkStatsTrackerPanel extends PluginPanel
 		statsLabel.setForeground(Color.GRAY);
 
 		// Copy icon
-		JLabel copyIcon = new JLabel("\uD83D\uDCCB");
-		copyIcon.setOpaque(true);
-		copyIcon.setBackground(row.getBackground());
-		copyIcon.setToolTipText("Copy session stats");
+		JLabel copyIcon = createHoverIcon("\uD83D\uDCCB", "Copy session stats");
 		copyIcon.addMouseListener(new MouseAdapter()
 		{
-			@Override
-			public void mouseEntered(MouseEvent e)
-			{
-				copyIcon.setBackground(ColorScheme.DARK_GRAY_HOVER_COLOR);
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e)
-			{
-				copyIcon.setBackground(row.getBackground());
-			}
-
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
@@ -278,24 +266,9 @@ public class AfkStatsTrackerPanel extends PluginPanel
 		});
 
 		// Delete icon
-		JLabel deleteIcon = new JLabel("\uD83D\uDDD1");
-		deleteIcon.setOpaque(true);
-		deleteIcon.setBackground(row.getBackground());
-		deleteIcon.setToolTipText("Delete session");
+		JLabel deleteIcon = createHoverIcon("\uD83D\uDDD1", "Delete session");
 		deleteIcon.addMouseListener(new MouseAdapter()
 		{
-			@Override
-			public void mouseEntered(MouseEvent e)
-			{
-				deleteIcon.setBackground(ColorScheme.DARK_GRAY_HOVER_COLOR);
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e)
-			{
-				deleteIcon.setBackground(row.getBackground());
-			}
-
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
@@ -320,6 +293,50 @@ public class AfkStatsTrackerPanel extends PluginPanel
 
 		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
 		return row;
+	}
+
+	private JLabel createHoverIcon(String text, String tooltip)
+	{
+		JLabel icon = new JLabel(text)
+		{
+			private boolean hovered = false;
+
+			{
+				addMouseListener(new MouseAdapter()
+				{
+					@Override
+					public void mouseEntered(MouseEvent e)
+					{
+						hovered = true;
+						repaint();
+					}
+
+					@Override
+					public void mouseExited(MouseEvent e)
+					{
+						hovered = false;
+						repaint();
+					}
+				});
+			}
+
+			@Override
+			protected void paintComponent(Graphics g)
+			{
+				if (hovered)
+				{
+					Graphics2D g2 = (Graphics2D) g.create();
+					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+					g2.setColor(ColorScheme.MEDIUM_GRAY_COLOR);
+					g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+					g2.dispose();
+				}
+				super.paintComponent(g);
+			}
+		};
+		icon.setToolTipText(tooltip);
+		icon.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
+		return icon;
 	}
 
 	private void makeEditable(JPanel row, Session session, JLabel nameLabel)
