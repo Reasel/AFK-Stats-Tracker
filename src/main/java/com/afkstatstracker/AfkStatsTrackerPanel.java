@@ -225,10 +225,23 @@ public class AfkStatsTrackerPanel extends PluginPanel
 
 		// Copy icon
 		JLabel copyIcon = new JLabel("\uD83D\uDCCB");
-		copyIcon.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		copyIcon.setOpaque(true);
+		copyIcon.setBackground(row.getBackground());
 		copyIcon.setToolTipText("Copy session stats");
 		copyIcon.addMouseListener(new MouseAdapter()
 		{
+			@Override
+			public void mouseEntered(MouseEvent e)
+			{
+				copyIcon.setBackground(ColorScheme.DARK_GRAY_HOVER_COLOR);
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e)
+			{
+				copyIcon.setBackground(row.getBackground());
+			}
+
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
@@ -266,10 +279,23 @@ public class AfkStatsTrackerPanel extends PluginPanel
 
 		// Delete icon
 		JLabel deleteIcon = new JLabel("\uD83D\uDDD1");
-		deleteIcon.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		deleteIcon.setOpaque(true);
+		deleteIcon.setBackground(row.getBackground());
 		deleteIcon.setToolTipText("Delete session");
 		deleteIcon.addMouseListener(new MouseAdapter()
 		{
+			@Override
+			public void mouseEntered(MouseEvent e)
+			{
+				deleteIcon.setBackground(ColorScheme.DARK_GRAY_HOVER_COLOR);
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e)
+			{
+				deleteIcon.setBackground(row.getBackground());
+			}
+
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
