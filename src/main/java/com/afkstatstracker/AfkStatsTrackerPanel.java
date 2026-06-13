@@ -2,6 +2,7 @@ package com.afkstatstracker;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -17,17 +18,22 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Collections;
+import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.ImageIcon;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import net.runelite.client.ui.ColorScheme;
+import net.runelite.client.util.ImageUtil;
 import net.runelite.client.ui.PluginPanel;
 
 public class AfkStatsTrackerPanel extends PluginPanel
@@ -40,6 +46,8 @@ public class AfkStatsTrackerPanel extends PluginPanel
 	private JButton stopButton;
 	private JLabel consistencyValueLabel;
 	private JLabel avgIntervalValueLabel;
+	private JLabel sessionElapsedLabel;
+	private JLabel sessionClicksLabel;
 
 	private ConsistencyIndicator consistencyIndicator;
 	private IntervalIndicator intervalIndicator;
@@ -104,6 +112,7 @@ public class AfkStatsTrackerPanel extends PluginPanel
 		consistencyIndicator = new ConsistencyIndicator();
 		intervalIndicator = new IntervalIndicator();
 
+		statsPanel.add(createSessionCard());
 		statsPanel.add(consistencyPanel);
 		statsPanel.add(consistencyIndicator);
 		statsPanel.add(avgIntervalPanel);
@@ -137,6 +146,38 @@ public class AfkStatsTrackerPanel extends PluginPanel
 		valueLabel.setFont(valueLabel.getFont().deriveFont(Font.BOLD, 20f));
 		valueLabel.setHorizontalAlignment(SwingConstants.LEFT);
 		card.add(valueLabel, BorderLayout.CENTER);
+
+		card.setMaximumSize(new Dimension(Integer.MAX_VALUE, card.getPreferredSize().height));
+		return card;
+	}
+
+	private JPanel createSessionCard()
+	{
+		JPanel card = new JPanel(new BorderLayout());
+		card.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createMatteBorder(1, 0, 0, 0, ColorScheme.DARK_GRAY_COLOR),
+			BorderFactory.createEmptyBorder(8, 5, 8, 5)
+		));
+		card.setToolTipText("Elapsed time and click count for the current session");
+
+		JLabel titleLabel = new JLabel("Session");
+		titleLabel.setForeground(Color.GRAY);
+		card.add(titleLabel, BorderLayout.NORTH);
+
+		JPanel valueRow = new JPanel();
+		valueRow.setLayout(new BoxLayout(valueRow, BoxLayout.X_AXIS));
+
+		sessionElapsedLabel = new JLabel("0s");
+		sessionElapsedLabel.setFont(sessionElapsedLabel.getFont().deriveFont(Font.BOLD, 20f));
+		sessionElapsedLabel.setAlignmentY(Component.BOTTOM_ALIGNMENT);
+
+		sessionClicksLabel = new JLabel(" · 0 clicks");
+		sessionClicksLabel.setForeground(Color.GRAY);
+		sessionClicksLabel.setAlignmentY(Component.BOTTOM_ALIGNMENT);
+
+		valueRow.add(sessionElapsedLabel);
+		valueRow.add(sessionClicksLabel);
+		card.add(valueRow, BorderLayout.CENTER);
 
 		card.setMaximumSize(new Dimension(Integer.MAX_VALUE, card.getPreferredSize().height));
 		return card;
@@ -183,13 +224,16 @@ public class AfkStatsTrackerPanel extends PluginPanel
 	{
 		historyContainer.removeAll();
 
-		for (Session session : sessionHistoryManager.getSessions())
+		List<Session> sessions = sessionHistoryManager.getSessions();
+		Collections.reverse(sessions);
+
+		for (Session session : sessions)
 		{
 			historyContainer.add(createSessionRow(session));
 			historyContainer.add(Box.createRigidArea(new Dimension(0, 3)));
 		}
 
-		if (sessionHistoryManager.getSessions().isEmpty())
+		if (sessions.isEmpty())
 		{
 			JLabel emptyLabel = new JLabel("No sessions recorded");
 			emptyLabel.setForeground(Color.GRAY);
@@ -235,31 +279,15 @@ public class AfkStatsTrackerPanel extends PluginPanel
 		statsLabel.setForeground(Color.GRAY);
 
 		// Copy icon
-		JLabel copyIcon = createHoverIcon("\uD83D\uDCCB", "Copy session stats");
+		JLabel copyIcon = createHoverIcon(
+			new ImageIcon(ImageUtil.loadImageResource(AfkStatsTrackerPanel.class, "copy.png")),
+			"Copy session stats");
 		copyIcon.addMouseListener(new MouseAdapter()
 		{
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
-				long durationMs = session.getEndTime() - session.getStartTime();
-				long totalSeconds = durationMs / 1000;
-				long hours = totalSeconds / 3600;
-				long minutes = (totalSeconds % 3600) / 60;
-				long seconds = totalSeconds % 60;
-
-				String lengthStr;
-				if (hours > 0)
-				{
-					lengthStr = String.format("%dh %dm %ds", hours, minutes, seconds);
-				}
-				else if (minutes > 0)
-				{
-					lengthStr = String.format("%dm %ds", minutes, seconds);
-				}
-				else
-				{
-					lengthStr = String.format("%ds", seconds);
-				}
+				String lengthStr = DurationFormatter.format(session.getEndTime() - session.getStartTime());
 
 				String text = String.format(
 					"Session: %s\nLength: %s\nConsistency: %d\nAvg Interval: %.0fms\nClicks: %d",
@@ -274,14 +302,24 @@ public class AfkStatsTrackerPanel extends PluginPanel
 		});
 
 		// Delete icon
-		JLabel deleteIcon = createHoverIcon("\uD83D\uDDD1", "Delete session");
+		JLabel deleteIcon = createHoverIcon(
+			new ImageIcon(ImageUtil.loadImageResource(AfkStatsTrackerPanel.class, "delete.png")),
+			"Delete session");
 		deleteIcon.addMouseListener(new MouseAdapter()
 		{
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
-				sessionHistoryManager.deleteSession(session.getId());
-				refreshHistoryPanel();
+				int choice = JOptionPane.showConfirmDialog(
+					AfkStatsTrackerPanel.this,
+					"Delete \"" + session.getName() + "\"?",
+					"Delete Session",
+					JOptionPane.YES_NO_OPTION);
+				if (choice == JOptionPane.YES_OPTION)
+				{
+					sessionHistoryManager.deleteSession(session.getId());
+					refreshHistoryPanel();
+				}
 			}
 		});
 
@@ -303,9 +341,9 @@ public class AfkStatsTrackerPanel extends PluginPanel
 		return row;
 	}
 
-	private JLabel createHoverIcon(String text, String tooltip)
+	private JLabel createHoverIcon(ImageIcon imageIcon, String tooltip)
 	{
-		JLabel icon = new JLabel(text)
+		JLabel icon = new JLabel(imageIcon)
 		{
 			private boolean hovered = false;
 
@@ -394,6 +432,8 @@ public class AfkStatsTrackerPanel extends PluginPanel
 
 	public void updateStats()
 	{
+		sessionElapsedLabel.setText(DurationFormatter.format(plugin.getSessionElapsedMs()));
+		sessionClicksLabel.setText(" · " + plugin.getClickCount() + " clicks");
 		int consistency = (int) plugin.getConsistency();
 		consistencyValueLabel.setText(String.valueOf(consistency));
 		consistencyIndicator.setValue(consistency);

@@ -41,6 +41,7 @@ public class AfkStatsTrackerPlugin extends Plugin
 	private NavigationButton navButton;
 
 	private long startTime;
+	private long endTime;
 	private boolean isTracking = false;
 
 	@Inject
@@ -81,12 +82,13 @@ public class AfkStatsTrackerPlugin extends Plugin
 		navButton = NavigationButton.builder()
 			.tooltip("AFK Stats Tracker")
 			.icon(ImageUtil.loadImageResource(getClass(), "icon.png")) // Need to add icon
+			.priority(Integer.MAX_VALUE)
 			.panel(panel)
 			.build();
 
 		clientToolbar.addNavigation(navButton);
 
-        mouseListener = new MouseClickCounterListener(client);
+        mouseListener = new MouseClickCounterListener();
         mouseManager.registerMouseListener(mouseListener);
 
 	}
@@ -106,9 +108,15 @@ public class AfkStatsTrackerPlugin extends Plugin
 
 	public void startSession()
 	{
+		if (isTracking)
+		{
+			return;
+		}
+
 		mouseListener.resetMouseClickCounterListener();
 		startTime = System.currentTimeMillis();
 		isTracking = true;
+		mouseManager.registerMouseListener(mouseListener);
 	}
 
 	public void stopSession()
@@ -118,7 +126,8 @@ public class AfkStatsTrackerPlugin extends Plugin
 			return;
 		}
 
-		long endTime = System.currentTimeMillis();
+		mouseManager.unregisterMouseListener(mouseListener);
+		endTime = System.currentTimeMillis();
 		String id = UUID.randomUUID().toString();
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 		String name = "Session " + dateFormat.format(new Date(startTime));
@@ -135,6 +144,24 @@ public class AfkStatsTrackerPlugin extends Plugin
 
 		sessionHistoryManager.addSession(session);
 		isTracking = false;
+	}
+
+	public boolean isTracking()
+	{
+		return isTracking;
+	}
+
+	public long getSessionElapsedMs()
+	{
+		if (startTime == 0)
+		{
+			return 0;
+		}
+		if (isTracking)
+		{
+			return System.currentTimeMillis() - startTime;
+		}
+		return endTime - startTime;
 	}
 
 	public long getConsistency()
