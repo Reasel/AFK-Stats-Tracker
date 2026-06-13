@@ -3,17 +3,11 @@ package com.afkstatstracker;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
-import net.runelite.api.Client;
 import net.runelite.client.input.MouseAdapter;
 
 public class MouseClickCounterListener extends MouseAdapter
 {
     private final List<Long> clickTimestamps = new ArrayList<>();
-    private final Client client;
-    MouseClickCounterListener(Client client)
-    {
-        this.client = client;
-    }
 
     @Override
     public MouseEvent mousePressed(MouseEvent mouseEvent)
@@ -22,14 +16,17 @@ public class MouseClickCounterListener extends MouseAdapter
         return mouseEvent;
     }
 
-    public List<Long> getClickCounter() { return this.clickTimestamps; }
-
-    public void addClick()
+    public synchronized List<Long> getClickCounter()
     {
-        this.clickTimestamps.add(System.currentTimeMillis());
+        return new ArrayList<>(clickTimestamps);
     }
 
-    public void resetMouseClickCounterListener()
+    public synchronized void addClick()
+    {
+        clickTimestamps.add(System.currentTimeMillis());
+    }
+
+    public synchronized void resetMouseClickCounterListener()
     {
         this.clickTimestamps.clear();
     }
