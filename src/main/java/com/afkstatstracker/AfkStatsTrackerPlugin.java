@@ -2,6 +2,7 @@ package com.afkstatstracker;
 
 import com.google.gson.Gson;
 
+import java.awt.Point;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -220,6 +221,32 @@ public class AfkStatsTrackerPlugin extends Plugin
             sum += interval;
         }
         return sum / intervals.size();
+    }
+
+    public double computeAverageDistance(List<Point> points)
+    {
+        int n = points.size();
+        if (n < 2) return 0.0;
+
+        double sum = 0.0;
+        for (int i = 1; i < n; i++)
+        {
+            sum += points.get(i).distance(points.get(i - 1));
+        }
+        return sum / (n - 1);
+    }
+
+    public double toDistancePercent(double avgPixelDist, int canvasWidth, int canvasHeight)
+    {
+        double diagonal = Math.hypot(canvasWidth, canvasHeight);
+        if (diagonal <= 0) return 0.0;
+        return avgPixelDist / diagonal * 100.0;
+    }
+
+    public double getAverageClickDistance()
+    {
+        double avgPx = computeAverageDistance(mouseListener.getClickPoints());
+        return toDistancePercent(avgPx, client.getCanvasWidth(), client.getCanvasHeight());
     }
 
 	public int getClickCount()
