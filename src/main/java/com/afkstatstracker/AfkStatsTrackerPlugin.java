@@ -22,7 +22,9 @@ import net.runelite.client.util.ImageUtil;
 
 @Slf4j
 @PluginDescriptor(
-	name = "AFK Stats Tracker"
+	name = "AFK Stats Tracker",
+	description = "Tracks click consistency, interval, and distance during AFK sessions",
+	tags = {"afk", "stats", "tracker", "clicks"}
 )
 public class AfkStatsTrackerPlugin extends Plugin
 {
@@ -89,8 +91,8 @@ public class AfkStatsTrackerPlugin extends Plugin
 
 		clientToolbar.addNavigation(navButton);
 
-        // ponytail: registration is managed per-session in start/stopSession.
-        // Registering here too caused double-registration (double-counted clicks).
+        // Registration is managed per-session in start/stopSession.
+        // Registering here too would double-register the listener (double-counting clicks).
         mouseListener = new MouseClickCounterListener();
 
 	}
