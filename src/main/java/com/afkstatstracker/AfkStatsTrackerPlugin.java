@@ -89,8 +89,9 @@ public class AfkStatsTrackerPlugin extends Plugin
 
 		clientToolbar.addNavigation(navButton);
 
+        // ponytail: registration is managed per-session in start/stopSession.
+        // Registering here too caused double-registration (double-counted clicks).
         mouseListener = new MouseClickCounterListener();
-        mouseManager.registerMouseListener(mouseListener);
 
 	}
 
