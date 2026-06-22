@@ -7,6 +7,7 @@ This RuneLite plugin tracks mouse clicks during AFK sessions in Old School RuneS
 Tracked Stats:
 - Consistency: A score from 0 to 100 showing how regular your click timing is. Higher scores mean more consistent intervals.
 - Average Click Interval: The average time in milliseconds between clicks.
+- Average Click Distance: The average distance the mouse moves between clicks, as a percentage of the game canvas diagonal (0–100%).
 - Session: Live elapsed time and click count while a session is running.
 
 Purpose: To track afk metrics to compare between activies and methods. Similar to tracking DPS and Kills/hr.
