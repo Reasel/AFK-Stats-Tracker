@@ -9,9 +9,11 @@ public class Session
     private final int clickCount;
     private final long consistencyScore;
     private final double avgInterval;
+    private final double avgDistancePercent;
 
     public Session(String id, String name, long startTime, long endTime,
-                   int clickCount, long consistencyScore, double avgInterval)
+                   int clickCount, long consistencyScore, double avgInterval,
+                   double avgDistancePercent)
     {
         this.id = id;
         this.name = name;
@@ -20,6 +22,7 @@ public class Session
         this.clickCount = clickCount;
         this.consistencyScore = consistencyScore;
         this.avgInterval = avgInterval;
+        this.avgDistancePercent = avgDistancePercent;
     }
 
     public String getId() { return id; }
@@ -30,5 +33,6 @@ public class Session
     public int getClickCount() { return clickCount; }
     public long getConsistencyScore() { return consistencyScore; }
     public double getAvgInterval() { return avgInterval; }
+    public double getAvgDistancePercent() { return avgDistancePercent; }
 
 }

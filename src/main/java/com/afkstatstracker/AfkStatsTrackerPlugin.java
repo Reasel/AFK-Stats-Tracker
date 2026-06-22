@@ -140,7 +140,8 @@ public class AfkStatsTrackerPlugin extends Plugin
 			endTime,
 			getClickCount(),
 			getConsistency(),
-			getAverageClickInterval()
+			getAverageClickInterval(),
+			getAverageClickDistance()
 		);
 
 		sessionHistoryManager.addSession(session);
