@@ -93,7 +93,7 @@ public class SessionHistoryManagerTest
 
     private Session createTestSession(String id, String name)
     {
-        return new Session(id, name, 1000L, 2000L, 10, 50L, 30000.0);
+        return new Session(id, name, 1000L, 2000L, 10, 50L, 30000.0, 0.0);
     }
 
     // Simple test storage implementation

@@ -46,11 +46,13 @@ public class AfkStatsTrackerPanel extends PluginPanel
 	private JButton stopButton;
 	private JLabel consistencyValueLabel;
 	private JLabel avgIntervalValueLabel;
+	private JLabel avgDistanceValueLabel;
 	private JLabel sessionElapsedLabel;
 	private JLabel sessionClicksLabel;
 
 	private ConsistencyIndicator consistencyIndicator;
 	private IntervalIndicator intervalIndicator;
+	private DistanceIndicator distanceIndicator;
 
 	private JPanel historyContainer;
 	private boolean historyExpanded = true;
@@ -109,14 +111,21 @@ public class AfkStatsTrackerPanel extends PluginPanel
 			"Average time between clicks in seconds");
 		avgIntervalValueLabel = (JLabel) ((BorderLayout) avgIntervalPanel.getLayout()).getLayoutComponent(BorderLayout.CENTER);
 
+		JPanel avgDistancePanel = createStatCard("Avg Click Distance",
+			"Average distance the mouse moved between clicks, as a percentage of the canvas diagonal.");
+		avgDistanceValueLabel = (JLabel) ((BorderLayout) avgDistancePanel.getLayout()).getLayoutComponent(BorderLayout.CENTER);
+
 		consistencyIndicator = new ConsistencyIndicator();
 		intervalIndicator = new IntervalIndicator();
+		distanceIndicator = new DistanceIndicator();
 
 		statsPanel.add(createSessionCard());
 		statsPanel.add(consistencyPanel);
 		statsPanel.add(consistencyIndicator);
 		statsPanel.add(avgIntervalPanel);
 		statsPanel.add(intervalIndicator);
+		statsPanel.add(avgDistancePanel);
+		statsPanel.add(distanceIndicator);
 		statsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, statsPanel.getPreferredSize().height));
 
 		// History section
@@ -272,9 +281,10 @@ public class AfkStatsTrackerPanel extends PluginPanel
 		});
 
 		// Stats line
-		JLabel statsLabel = new JLabel(String.format("%d | %.0fms | %d clicks",
+		JLabel statsLabel = new JLabel(String.format("%d | %.0fms | %.1f%% | %d clicks",
 			session.getConsistencyScore(),
 			session.getAvgInterval(),
+			session.getAvgDistancePercent(),
 			session.getClickCount()));
 		statsLabel.setForeground(Color.GRAY);
 
@@ -290,10 +300,11 @@ public class AfkStatsTrackerPanel extends PluginPanel
 				String lengthStr = DurationFormatter.format(session.getEndTime() - session.getStartTime());
 
 				String text = String.format(
-					"Session: %s\nLength: %s\nConsistency: %d\nAvg Interval: %.0fms\nClicks: %d",
+					"Session: %s\nLength: %s\nConsistency: %d\nAvg Interval: %.0fms\nAvg Distance: %.1f%%\nClicks: %d",
 					session.getName(), lengthStr,
 					session.getConsistencyScore(),
 					session.getAvgInterval(),
+					session.getAvgDistancePercent(),
 					session.getClickCount());
 
 				Toolkit.getDefaultToolkit().getSystemClipboard()
@@ -440,6 +451,9 @@ public class AfkStatsTrackerPanel extends PluginPanel
 		double avgInterval = plugin.getAverageClickInterval();
 		avgIntervalValueLabel.setText(String.format("%.0f ms", avgInterval));
 		intervalIndicator.setValue(avgInterval);
+		double avgDistance = plugin.getAverageClickDistance();
+		avgDistanceValueLabel.setText(String.format("%.1f%%", avgDistance));
+		distanceIndicator.setValue(avgDistance);
 	}
 
 	public void stopTimer()
@@ -644,6 +658,82 @@ public class AfkStatsTrackerPanel extends PluginPanel
 				g2.setColor(MARKER_COLOR);
 				g2.fillPolygon(xPoints, yPoints, 3);
 			}
+
+			g2.dispose();
+		}
+	}
+
+	private static class DistanceIndicator extends JPanel
+	{
+		private static final int MARKER_SIZE = 8;
+		private static final int PADDING_X = 12;
+		private static final int TICK_HEIGHT = 4;
+		private static final Color TRACK_COLOR = ColorScheme.MEDIUM_GRAY_COLOR;
+		private static final Color TICK_COLOR = ColorScheme.LIGHT_GRAY_COLOR;
+		private static final Color MARKER_COLOR = ColorScheme.BRAND_ORANGE;
+
+		private double value = 0;
+
+		DistanceIndicator()
+		{
+			setToolTipText("Average distance the mouse moved between clicks, as a percentage of the canvas diagonal.");
+			setOpaque(false);
+			setBorder(BorderFactory.createEmptyBorder(2, 5, 4, 5));
+			setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+			setPreferredSize(new Dimension(0, 36));
+		}
+
+		void setValue(double value)
+		{
+			this.value = Math.max(0, Math.min(100, value));
+			repaint();
+		}
+
+		@Override
+		protected void paintComponent(Graphics g)
+		{
+			super.paintComponent(g);
+			Graphics2D g2 = (Graphics2D) g.create();
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+			int w = getWidth();
+
+			Font labelFont = g2.getFont().deriveFont(Font.PLAIN, 9f);
+			g2.setFont(labelFont);
+			int labelHeight = g2.getFontMetrics().getHeight();
+
+			int trackLeft = PADDING_X;
+			int trackRight = w - PADDING_X;
+			int trackWidth = trackRight - trackLeft;
+			int lineY = MARKER_SIZE + 2;
+
+			// Draw horizontal line
+			g2.setColor(TRACK_COLOR);
+			g2.drawLine(trackLeft, lineY, trackRight, lineY);
+
+			// Draw tick marks every 25 and labels at 0 and 100
+			for (int i = 0; i <= 100; i += 25)
+			{
+				int x = trackLeft + (int) (trackWidth * i / 100.0);
+				g2.setColor(TICK_COLOR);
+				g2.drawLine(x, lineY - TICK_HEIGHT / 2, x, lineY + TICK_HEIGHT / 2);
+
+				if (i == 0 || i == 100)
+				{
+					String label = i + "%";
+					int labelWidth = g2.getFontMetrics().stringWidth(label);
+					g2.setColor(Color.GRAY);
+					g2.drawString(label, x - labelWidth / 2, lineY + TICK_HEIGHT / 2 + labelHeight);
+				}
+			}
+
+			// Draw marker (triangle pointing down)
+			int markerX = trackLeft + (int) (trackWidth * value / 100.0);
+			int markerTop = lineY - MARKER_SIZE - 1;
+			int[] xPoints = {markerX - MARKER_SIZE / 2, markerX + MARKER_SIZE / 2, markerX};
+			int[] yPoints = {markerTop, markerTop, lineY - 1};
+			g2.setColor(MARKER_COLOR);
+			g2.fillPolygon(xPoints, yPoints, 3);
 
 			g2.dispose();
 		}
