@@ -12,7 +12,7 @@ Tracked Stats:
 
 Purpose: To track afk metrics to compare between activies and methods. Similar to tracking DPS and Kills/hr.
 
-Session history shows your most recent sessions first. Click a session name to rename it. Sessions can be copied to clipboard or deleted (with confirmation).
+Session history shows your most recent sessions first. Click a session name to rename it. Sessions can be copied to clipboard or deleted (with confirmation). The Start/Stop buttons and live stats stay pinned in place; only the history list scrolls when it grows long.
 
 ## Wiki Guide
 

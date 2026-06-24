@@ -9,6 +9,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
@@ -30,6 +31,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.ImageIcon;
+import javax.swing.Scrollable;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import net.runelite.client.ui.ColorScheme;
@@ -55,10 +57,14 @@ public class AfkStatsTrackerPanel extends PluginPanel
 	private DistanceIndicator distanceIndicator;
 
 	private JPanel historyContainer;
+	private JScrollPane historyScrollPane;
 	private boolean historyExpanded = true;
 
 	public AfkStatsTrackerPanel(AfkStatsTrackerPlugin plugin, SessionHistoryManager sessionHistoryManager)
 	{
+		// wrap=false: we manage our own scroll so the buttons/stats stay pinned and only history data scrolls
+		super(false);
+
 		this.plugin = plugin;
 		this.sessionHistoryManager = sessionHistoryManager;
 
@@ -67,9 +73,9 @@ public class AfkStatsTrackerPanel extends PluginPanel
 		timer = new Timer(1000, e -> updateStats());
 		timer.setRepeats(true);
 
-		// Main content panel
-		JPanel contentPanel = new JPanel();
-		contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+		// Pinned top panel (buttons + stats + history header) — never scrolls
+		JPanel topPanel = new JPanel();
+		topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
 
 		// Button panel
 		JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 5, 0));
@@ -128,14 +134,22 @@ public class AfkStatsTrackerPanel extends PluginPanel
 		statsPanel.add(distanceIndicator);
 		statsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, statsPanel.getPreferredSize().height));
 
-		// History section
-		JPanel historySection = createHistorySection();
+		// History header (pinned) + scrollable data area
+		JPanel historyHeader = createHistoryHeader();
 
-		contentPanel.add(buttonPanel);
-		contentPanel.add(statsPanel);
-		contentPanel.add(historySection);
+		historyContainer = new ScrollablePanel();
 
-		add(contentPanel, BorderLayout.NORTH);
+		historyScrollPane = new JScrollPane(historyContainer);
+		historyScrollPane.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
+		historyScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		refreshHistoryPanel();
+
+		topPanel.add(buttonPanel);
+		topPanel.add(statsPanel);
+		topPanel.add(historyHeader);
+
+		add(topPanel, BorderLayout.NORTH);
+		add(historyScrollPane, BorderLayout.CENTER);
 	}
 
 	private JPanel createStatCard(String title, String tooltip)
@@ -192,13 +206,11 @@ public class AfkStatsTrackerPanel extends PluginPanel
 		return card;
 	}
 
-	private JPanel createHistorySection()
+	private JPanel createHistoryHeader()
 	{
-		JPanel section = new JPanel(new BorderLayout());
-		section.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
-
-		// Header with toggle
 		JPanel header = new JPanel(new BorderLayout());
+		header.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+
 		JLabel headerLabel = new JLabel("▼ Session History");
 		headerLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		headerLabel.addMouseListener(new MouseAdapter()
@@ -208,25 +220,12 @@ public class AfkStatsTrackerPanel extends PluginPanel
 			{
 				historyExpanded = !historyExpanded;
 				headerLabel.setText((historyExpanded ? "▼" : "▶") + " Session History");
-				historyContainer.setVisible(historyExpanded);
+				historyScrollPane.setVisible(historyExpanded);
 				revalidate();
 			}
 		});
 		header.add(headerLabel, BorderLayout.WEST);
-
-		// History container
-		historyContainer = new JPanel();
-		historyContainer.setLayout(new BoxLayout(historyContainer, BoxLayout.Y_AXIS));
-
-		JScrollPane scrollPane = new JScrollPane(historyContainer);
-		scrollPane.setPreferredSize(new Dimension(0, 300));
-		scrollPane.setBorder(null);
-
-		section.add(header, BorderLayout.NORTH);
-		section.add(scrollPane, BorderLayout.CENTER);
-
-		refreshHistoryPanel();
-		return section;
+		return header;
 	}
 
 	public void refreshHistoryPanel()
@@ -461,6 +460,45 @@ public class AfkStatsTrackerPanel extends PluginPanel
 		if (timer != null)
 		{
 			timer.stop();
+		}
+	}
+
+	// Vertical list whose width follows the viewport, so rows shrink/truncate instead of forcing a horizontal scrollbar
+	private static class ScrollablePanel extends JPanel implements Scrollable
+	{
+		ScrollablePanel()
+		{
+			setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+		}
+
+		@Override
+		public Dimension getPreferredScrollableViewportSize()
+		{
+			return getPreferredSize();
+		}
+
+		@Override
+		public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction)
+		{
+			return 16;
+		}
+
+		@Override
+		public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction)
+		{
+			return visibleRect.height;
+		}
+
+		@Override
+		public boolean getScrollableTracksViewportWidth()
+		{
+			return true;
+		}
+
+		@Override
+		public boolean getScrollableTracksViewportHeight()
+		{
+			return false;
 		}
 	}
 
