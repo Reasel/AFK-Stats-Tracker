@@ -1,4 +1,4 @@
-AFK Stats Tracker
+# AFK Stats Tracker
 
 This RuneLite plugin tracks mouse clicks during AFK sessions in Old School RuneScape.
 
@@ -10,7 +10,7 @@ Tracked Stats:
 - Average Click Distance: The average distance the mouse moves between clicks, as a percentage of the game canvas diagonal (0–100%).
 - Session: Live elapsed time and click count while a session is running.
 
-Purpose: To track afk metrics to compare between activies and methods. Similar to tracking DPS and Kills/hr.
+Use it to compare AFK activities and training methods, the same way you track DPS or kills/hr.
 
 Session history shows your most recent sessions first. Click a session name to rename it. Sessions can be copied to clipboard or deleted (with confirmation). The Start/Stop buttons and live stats stay pinned in place; only the history list scrolls when it grows long.
 
