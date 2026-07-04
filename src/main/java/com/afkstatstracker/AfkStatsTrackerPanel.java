@@ -1,5 +1,6 @@
 package com.afkstatstracker;
 
+import com.google.gson.Gson;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -26,8 +27,10 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.ImageIcon;
@@ -42,6 +45,7 @@ public class AfkStatsTrackerPanel extends PluginPanel
 {
 	private final AfkStatsTrackerPlugin plugin;
 	private final SessionHistoryManager sessionHistoryManager;
+	private final Gson gson;
 
 	private Timer timer;
 	private JButton startButton;
@@ -60,13 +64,14 @@ public class AfkStatsTrackerPanel extends PluginPanel
 	private JScrollPane historyScrollPane;
 	private boolean historyExpanded = true;
 
-	public AfkStatsTrackerPanel(AfkStatsTrackerPlugin plugin, SessionHistoryManager sessionHistoryManager)
+	public AfkStatsTrackerPanel(AfkStatsTrackerPlugin plugin, SessionHistoryManager sessionHistoryManager, Gson gson)
 	{
 		// wrap=false: we manage our own scroll so the buttons/stats stay pinned and only history data scrolls
 		super(false);
 
 		this.plugin = plugin;
 		this.sessionHistoryManager = sessionHistoryManager;
+		this.gson = gson;
 
 		setLayout(new BorderLayout());
 
@@ -290,24 +295,23 @@ public class AfkStatsTrackerPanel extends PluginPanel
 		// Copy icon
 		JLabel copyIcon = createHoverIcon(
 			new ImageIcon(ImageUtil.loadImageResource(AfkStatsTrackerPanel.class, "copy.png")),
-			"Copy session stats");
+			"Copy session");
 		copyIcon.addMouseListener(new MouseAdapter()
 		{
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
-				String lengthStr = DurationFormatter.format(session.getEndTime() - session.getStartTime());
+				JPopupMenu menu = new JPopupMenu();
 
-				String text = String.format(
-					"Session: %s\nLength: %s\nConsistency: %d\nAvg Interval: %.0fms\nAvg Distance: %.1f%%\nClicks: %d",
-					session.getName(), lengthStr,
-					session.getConsistencyScore(),
-					session.getAvgInterval(),
-					session.getAvgDistancePercent(),
-					session.getClickCount());
+				JMenuItem copyStats = new JMenuItem("Copy stats");
+				copyStats.addActionListener(a -> copyToClipboard(formatSessionText(session)));
+				menu.add(copyStats);
 
-				Toolkit.getDefaultToolkit().getSystemClipboard()
-					.setContents(new StringSelection(text), null);
+				JMenuItem copyJson = new JMenuItem("Copy JSON");
+				copyJson.addActionListener(a -> copyToClipboard(gson.toJson(roundForExport(session))));
+				menu.add(copyJson);
+
+				menu.show(copyIcon, e.getX(), e.getY());
 			}
 		});
 
@@ -393,6 +397,37 @@ public class AfkStatsTrackerPanel extends PluginPanel
 		icon.setToolTipText(tooltip);
 		icon.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
 		return icon;
+	}
+
+	private String formatSessionText(Session session)
+	{
+		String lengthStr = DurationFormatter.format(session.getEndTime() - session.getStartTime());
+		return String.format(
+			"Session: %s\nLength: %s\nConsistency: %d\nAvg Interval: %.0fms\nAvg Distance: %.1f%%\nClicks: %d",
+			session.getName(), lengthStr,
+			session.getConsistencyScore(),
+			session.getAvgInterval(),
+			session.getAvgDistancePercent(),
+			session.getClickCount());
+	}
+
+	private void copyToClipboard(String text)
+	{
+		Toolkit.getDefaultToolkit().getSystemClipboard()
+			.setContents(new StringSelection(text), null);
+	}
+
+	static Session roundForExport(Session session)
+	{
+		return new Session(
+			session.getId(),
+			session.getName(),
+			session.getStartTime(),
+			session.getEndTime(),
+			session.getClickCount(),
+			session.getConsistencyScore(),
+			Math.round(session.getAvgInterval() * 100) / 100.0,
+			Math.round(session.getAvgDistancePercent() * 100) / 100.0);
 	}
 
 	private void makeEditable(JPanel row, Session session, JLabel nameLabel)
