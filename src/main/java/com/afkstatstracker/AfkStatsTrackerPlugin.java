@@ -79,7 +79,7 @@ public class AfkStatsTrackerPlugin extends Plugin
 
 		log.info("AFK Stats Tracker plugin started!");
 
-		panel = new AfkStatsTrackerPanel(this, sessionHistoryManager);
+		panel = new AfkStatsTrackerPanel(this, sessionHistoryManager, gson);
 
 		// Add to toolbar
 		navButton = NavigationButton.builder()
