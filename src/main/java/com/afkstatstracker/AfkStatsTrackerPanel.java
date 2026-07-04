@@ -308,7 +308,7 @@ public class AfkStatsTrackerPanel extends PluginPanel
 				menu.add(copyStats);
 
 				JMenuItem copyJson = new JMenuItem("Copy JSON");
-				copyJson.addActionListener(a -> copyToClipboard(gson.toJson(session)));
+				copyJson.addActionListener(a -> copyToClipboard(gson.toJson(roundForExport(session))));
 				menu.add(copyJson);
 
 				menu.show(copyIcon, e.getX(), e.getY());
@@ -415,6 +415,19 @@ public class AfkStatsTrackerPanel extends PluginPanel
 	{
 		Toolkit.getDefaultToolkit().getSystemClipboard()
 			.setContents(new StringSelection(text), null);
+	}
+
+	static Session roundForExport(Session session)
+	{
+		return new Session(
+			session.getId(),
+			session.getName(),
+			session.getStartTime(),
+			session.getEndTime(),
+			session.getClickCount(),
+			session.getConsistencyScore(),
+			Math.round(session.getAvgInterval() * 100) / 100.0,
+			Math.round(session.getAvgDistancePercent() * 100) / 100.0);
 	}
 
 	private void makeEditable(JPanel row, Session session, JLabel nameLabel)

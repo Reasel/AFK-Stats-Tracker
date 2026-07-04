@@ -27,4 +27,16 @@ public class SessionJsonTest
 		assertEquals(87L, json.get("consistencyScore").getAsLong());
 		assertEquals(1000L, json.get("startTime").getAsLong());
 	}
+
+	@Test
+	public void roundForExportRoundsFloatsToTwoDecimals()
+	{
+		Session session = new Session("id-1", "Test", 1000L, 61000L, 7, 68L, 521.1666666666666, 4.014945489298668);
+		Session rounded = AfkStatsTrackerPanel.roundForExport(session);
+
+		assertEquals(521.17, rounded.getAvgInterval(), 0.0);
+		assertEquals(4.01, rounded.getAvgDistancePercent(), 0.0);
+		assertEquals(7, rounded.getClickCount());
+		assertEquals(68L, rounded.getConsistencyScore());
+	}
 }
