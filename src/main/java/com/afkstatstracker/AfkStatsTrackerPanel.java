@@ -39,10 +39,13 @@ import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.util.ImageUtil;
+import net.runelite.client.util.LinkBrowser;
 import net.runelite.client.ui.PluginPanel;
 
 public class AfkStatsTrackerPanel extends PluginPanel
 {
+	private static final String SITE_URL = "https://afk.statstracker.workers.dev/";
+
 	private final AfkStatsTrackerPlugin plugin;
 	private final SessionHistoryManager sessionHistoryManager;
 	private final Gson gson;
@@ -155,6 +158,21 @@ public class AfkStatsTrackerPanel extends PluginPanel
 
 		add(topPanel, BorderLayout.NORTH);
 		add(historyScrollPane, BorderLayout.CENTER);
+
+		JLabel siteLink = new JLabel("View community stats ↗");
+		siteLink.setForeground(ColorScheme.BRAND_ORANGE);
+		siteLink.setBorder(BorderFactory.createEmptyBorder(6, 5, 4, 5));
+		siteLink.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		siteLink.setToolTipText("Compare your sessions with others at " + SITE_URL);
+		siteLink.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				LinkBrowser.browse(SITE_URL);
+			}
+		});
+		add(siteLink, BorderLayout.SOUTH);
 	}
 
 	private JPanel createStatCard(String title, String tooltip)
